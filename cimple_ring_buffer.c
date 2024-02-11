@@ -31,6 +31,22 @@ bool ring_buffer_push(ring_buffer_t *rb, const void *item) {
     return true;
 }
 
+void *ring_buffer_next_slot(ring_buffer_t *rb) {
+    void *next_space = (char *)rb->buffer + rb->head * rb->item_size;
+
+    // if the buffer is full, advance the tail to overwrite the oldest data
+    if (rb->count == rb->capacity) {
+        rb->tail = (rb->tail + 1) % rb->capacity;
+    } else {
+        rb->count++; // increase count if not overwriting
+    }
+
+    // always advance the head
+    rb->head = (rb->head + 1) % rb->capacity;
+
+    return next_space;
+}
+
 bool ring_buffer_pop(ring_buffer_t *rb, void *item) {
     if (rb->count == 0) return false;
 

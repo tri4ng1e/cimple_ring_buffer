@@ -28,10 +28,16 @@ int main() {
     }
 
     printf("Creating items:\n");
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 4; ++i) {
         printf("  iteration %d: %d\n", i, i+1);
         int item = i + 1;
         ring_buffer_push(&rb, &item);
+    }
+
+    for (int i = 4; i < 8; ++i) {
+        printf("  iteration %d: %d (next_slot)\n", i, i+1);
+        int *item = ring_buffer_next_slot(&rb);
+        *item = i + 1;
     }
 
     printf("Directl access by logical index:\n");

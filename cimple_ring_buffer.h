@@ -26,6 +26,8 @@ bool  ring_buffer_push  (ring_buffer_t *rb, const void *item);
 bool  ring_buffer_pop   (ring_buffer_t *rb, void *item);
 bool  ring_buffer_remove(ring_buffer_t *rb, size_t index);
 
+void *ring_buffer_next_slot(ring_buffer_t *rb);
+
 void *ring_buffer_get   (ring_buffer_t *rb, size_t logical_index);
 
 ring_buffer_item_t *ring_buffer_find    (ring_buffer_t *rb, bool (*predicate)(const void* item, void* context), void *context);
