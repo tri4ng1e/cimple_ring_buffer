@@ -18,7 +18,7 @@ bool find_item(const void *item, void *context) {
 
 int main() {
     ring_buffer_t rb;
-    size_t capacity = 5;
+    size_t capacity = 10;
 
     printf("Ring buffer size: %zu.\n", capacity);
 
@@ -28,19 +28,19 @@ int main() {
     }
 
     printf("Creating items:\n");
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 10; ++i) {
         printf("  iteration %d: %d\n", i, i+1);
         int item = i + 1;
         ring_buffer_push(&rb, &item);
     }
 
-    for (int i = 4; i < 8; ++i) {
+    for (int i = 10; i < 20; ++i) {
         printf("  iteration %d: %d (next_slot)\n", i, i+1);
         int *item = ring_buffer_next_slot(&rb);
         *item = i + 1;
     }
 
-    printf("Directl access by logical index:\n");
+    printf("Direct access by logical index:\n");
     for (size_t i = 0; i < rb.count; ++i) {
         int *item = ring_buffer_get(&rb, i);
         printf("  item %zu: %d\n", i, *item);
@@ -59,7 +59,7 @@ int main() {
     }
 
     printf("Finding value 5... ");
-    search_value = 5;
+    search_value = 15;
     found_item = ring_buffer_find(&rb, find_item, &search_value);
     if (found_item != NULL) {
         printf("Found at index %zu.\n", found_item->index);
@@ -85,6 +85,13 @@ int main() {
         printf("  item %zu: %d\n", found_items[i].index, *(int*)(found_items[i].item));
     }
     free(found_items);
+
+    printf("Removeing all even numbers... ");
+    size_t removed_count = ring_buffer_remove_all(&rb, is_even, NULL);
+    printf("%zu element(s) removed.\n", removed_count);
+
+    printf("Iterating over items:\n");
+    ring_buffer_iterate(&rb, process_item, NULL);
 
     ring_buffer_free(&rb);
 

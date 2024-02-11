@@ -82,6 +82,28 @@ bool ring_buffer_remove(ring_buffer_t *rb, size_t index) {
     return true;
 }
 
+size_t ring_buffer_remove_all(ring_buffer_t *rb, bool (*predicate)(const void* item, void* context), void *context) {
+    size_t keepCount = 0; // Count of items to be kept
+    size_t originalCount = rb->count;
+
+    for (size_t i = 0; i < originalCount; ++i) {
+        void *item = ring_buffer_get(rb, i);
+        if (!predicate(item, context)) {
+            // If the item does not match the predicate and needs to be kept, but not in its original position,
+            // move it to the correct position accounting for the removed items.
+            if (i != keepCount) { // Check if the item needs to be moved
+                void *targetSlot = (char *)rb->buffer + ((rb->tail + keepCount) % rb->capacity) * rb->item_size;
+                memcpy(targetSlot, item, rb->item_size);
+            }
+            keepCount++;
+        }
+    }
+
+    rb->count = keepCount;
+    rb->head = (rb->tail + rb->count) % rb->capacity; // Recalculate the head position
+
+    return originalCount - keepCount; // Return the number of removed items
+}
 
 void *ring_buffer_get(ring_buffer_t *rb, size_t logical_index) {
     if (logical_index >= rb->count) return NULL;
