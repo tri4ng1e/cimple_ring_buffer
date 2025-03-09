@@ -3,14 +3,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Define to preserve elements order during element removal
-// Will cost additional time
+// Define to preserve elements order during element removal.
+// If set to 1 then removals shift items; if 0, the last item is swapped in.
 #ifndef CIMPLE_RING_BUFFER_PRESERVE_ORDER
 #define CIMPLE_RING_BUFFER_PRESERVE_ORDER 0
 #endif
 
 // Define to allow overwriting of oldest data when buffer is full.
-// If not defined, ring_buffer_push will fail when the buffer is full.
+// If set to 0, ring_buffer_push will fail when the buffer is full.
 #ifndef CIMPLE_RING_BUFFER_ALLOW_OVERWRITE
 #define CIMPLE_RING_BUFFER_ALLOW_OVERWRITE 1
 #endif
@@ -35,9 +35,12 @@ typedef struct {
     size_t index;    // Logical index of the item within the ring buffer.
 } ring_buffer_item_t;
 
-// Initializes the ring buffer. Returns true on success, false on failure.
-// Fails if rb is NULL, capacity or item_size is zero, or if memory allocation fails.
+// Initializes the ring buffer (allocates memory).
+// Returns true on success, false on failure.
 bool ring_buffer_init(ring_buffer_t *rb, size_t capacity, size_t item_size);
+
+// Initializes the ring buffer using a user-provided buffer.
+bool ring_buffer_init_with_buffer(ring_buffer_t *rb, void *buffer, size_t capacity, size_t item_size);
 
 // Frees any allocated memory for the ring buffer.
 void ring_buffer_free(ring_buffer_t *rb);
@@ -56,12 +59,11 @@ static inline bool ring_buffer_is_full(const ring_buffer_t *rb) {
 }
 
 // Pushes an item onto the ring buffer.
-// Returns true on success. If the buffer is full and overwrite is disabled,
-// returns false.
+// Returns true on success. If the buffer is full and overwrite is disabled, returns false.
 bool ring_buffer_push(ring_buffer_t *rb, const void *item);
 
 // Provides a pointer to the next slot for in-place writing.
-// Overwrites oldest data if buffer is full.
+// Overwrites oldest data if the buffer is full.
 void *ring_buffer_next_slot(ring_buffer_t *rb);
 
 // Pops (removes) the oldest item from the ring buffer and copies it into 'item'.
@@ -69,13 +71,10 @@ void *ring_buffer_next_slot(ring_buffer_t *rb);
 bool ring_buffer_pop(ring_buffer_t *rb, void *item);
 
 // Removes an item at the specified logical index.
-// If order preservation is enabled (via CIMPLE_RING_BUFFER_PRESERVE_ORDER), items
-// are shifted; otherwise the last item is swapped into the removed slot.
 // Returns false if the index is invalid.
 bool ring_buffer_remove(ring_buffer_t *rb, size_t index);
 
 // Removes all items matching a predicate.
-// The predicate function should return true if the item is to be removed.
 // Returns the number of items removed.
 size_t ring_buffer_remove_all(ring_buffer_t *rb, bool (*predicate)(const void* item, void* context), void *context);
 
@@ -86,10 +85,11 @@ void *ring_buffer_get(ring_buffer_t *rb, size_t logical_index);
 void ring_buffer_iterate(ring_buffer_t *rb, void (*func)(ring_buffer_item_t*, void*), void *context);
 
 // Returns a linear copy of the ring buffer as a newly allocated array.
-// The caller is responsible for freeing the returned memory.
 void *ring_buffer_to_linear_array(ring_buffer_t *rb);
 
-// Note: The following search functions use dynamic memory allocation. In embedded systems
-// with tight memory constraints, consider alternative designs (e.g. caller-supplied buffers).
+// Returns the oldest item without removing it.
+void *ring_buffer_peek(const ring_buffer_t *rb);
+
+// Search functions (use dynamic memory allocation; in tight-memory embedded, consider alternatives).
 ring_buffer_item_t *ring_buffer_find(ring_buffer_t *rb, bool (*predicate)(const void* item, void* context), void *context);
 ring_buffer_item_t *ring_buffer_find_all(ring_buffer_t *rb, bool (*predicate)(const void* item, void* context), void *context, size_t *count);
